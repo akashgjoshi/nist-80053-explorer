@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIST SP 800-53 Rev 5 — Control Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#1d6fa5;--text:#e2e8f0;--muted:#64748b;--low:#22c55e;--mod:#f59e0b;--high:#ef4444;--fam:#818cf8;--p1:#f87171;--p2:#fb923c;--p3:#facc15;--enh:#38bdf8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+header{border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;background:var(--surface);position:sticky;top:0;z-index:20}
+.logo-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;background:var(--accent2);color:#fff;padding:3px 9px;border-radius:4px;letter-spacing:.06em;white-space:nowrap}
+.ver-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2);padding:2px 7px;border-radius:3px}
+header h1{font-size:15px;font-weight:500;letter-spacing:-.01em}
+header p{font-size:11px;color:var(--muted);margin-top:1px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.live-dot.on{background:var(--low);animation:pulse 2s infinite}
+.live-dot.err{background:var(--high)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-label{font-size:11px;color:var(--muted)}
+.container{display:grid;grid-template-columns:265px 1fr;min-height:calc(100vh - 61px)}
+aside{border-right:1px solid var(--border);background:var(--surface);padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:61px;height:calc(100vh - 61px);overflow-y:auto}
+aside::-webkit-scrollbar{width:3px}
+aside::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.search-wrap{position:relative}
+#searchInput{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:8px 10px 8px 32px;border-radius:6px;outline:none;transition:border-color .2s}
+#searchInput:focus{border-color:var(--accent)}
+#searchInput::placeholder{color:var(--muted)}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.baseline-btns{display:flex;flex-direction:column;gap:5px}
+.baseline-btn{padding:7px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.baseline-btn:hover{background:var(--surface2);color:var(--text)}
+.baseline-btn.active-low{border-color:var(--low);background:rgba(34,197,94,.08);color:var(--low)}
+.baseline-btn.active-mod{border-color:var(--mod);background:rgba(245,158,11,.08);color:var(--mod)}
+.baseline-btn.active-high{border-color:var(--high);background:rgba(239,68,68,.08);color:var(--high)}
+.baseline-btn.active-priv{border-color:var(--fam);background:rgba(129,140,248,.08);color:var(--fam)}
+.count-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 5px;border-radius:3px;background:var(--surface2)}
+.baseline-btn.active-low .count-badge{background:rgba(34,197,94,.15);color:var(--low)}
+.baseline-btn.active-mod .count-badge{background:rgba(245,158,11,.15);color:var(--mod)}
+.baseline-btn.active-high .count-badge{background:rgba(239,68,68,.15);color:var(--high)}
+.baseline-btn.active-priv .count-badge{background:rgba(129,140,248,.15);color:var(--fam)}
+.toggle-row{display:flex;gap:5px}
+.toggle-btn{flex:1;padding:6px 4px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;text-align:center;transition:all .15s}
+.toggle-btn:hover{background:var(--surface2);color:var(--text)}
+.toggle-btn.active-p1{border-color:var(--p1);background:rgba(248,113,113,.1);color:var(--p1)}
+.toggle-btn.active-p2{border-color:var(--p2);background:rgba(251,146,60,.1);color:var(--p2)}
+.toggle-btn.active-p3{border-color:var(--p3);background:rgba(250,204,21,.1);color:var(--p3)}
+.toggle-btn.active-enh{border-color:var(--enh);background:rgba(56,189,248,.1);color:var(--enh)}
+.toggle-btn.active-base{border-color:var(--accent);background:rgba(0,212,255,.1);color:var(--accent)}
+.prio-legend{margin-top:5px;font-size:10px;color:var(--muted);line-height:1.9}
+.family-list{display:flex;flex-direction:column;gap:2px}
+.family-item{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s}
+.family-item:hover{background:var(--surface2);color:var(--text)}
+.family-item.active{background:rgba(129,140,248,.1);color:var(--fam)}
+.fam-code{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;min-width:26px}
+.clear-btn{font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
+.clear-btn:hover{color:var(--text)}
+main{padding:1.25rem;overflow-y:auto;max-height:calc(100vh - 61px)}
+.stats-bar{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.stats-bar strong{color:var(--accent);font-family:'IBM Plex Mono',monospace}
+.bi-pill{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:500;margin-left:auto}
+.bi-none{background:var(--surface2);color:var(--muted)}
+.bi-low{background:rgba(34,197,94,.1);color:var(--low);border:1px solid rgba(34,197,94,.2)}
+.bi-mod{background:rgba(245,158,11,.1);color:var(--mod);border:1px solid rgba(245,158,11,.2)}
+.bi-high{background:rgba(239,68,68,.1);color:var(--high);border:1px solid rgba(239,68,68,.2)}
+.bi-priv{background:rgba(129,140,248,.1);color:var(--fam);border:1px solid rgba(129,140,248,.2)}
+.controls-list{display:flex;flex-direction:column;gap:6px}
+.ctrl-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;transition:border-color .15s}
+.ctrl-card:hover{border-color:var(--accent2)}
+.ctrl-card.expanded{border-color:var(--accent)}
+.ctrl-card.is-enh{border-left:3px solid rgba(56,189,248,.4);margin-left:20px}
+.card-header{display:flex;align-items:center;gap:8px;padding:.7rem 1rem;cursor:pointer}
+.ctrl-id{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--accent);min-width:64px;flex-shrink:0}
+.ctrl-id.enh{color:var(--enh)}
+.ctrl-name{font-size:13px;font-weight:500;color:var(--text);flex:1;line-height:1.3}
+.pills{display:flex;gap:3px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;padding:2px 4px;border-radius:3px}
+.pill-L{background:rgba(34,197,94,.15);color:var(--low)}
+.pill-M{background:rgba(245,158,11,.15);color:var(--mod)}
+.pill-H{background:rgba(239,68,68,.15);color:var(--high)}
+.pill-PT{background:rgba(129,140,248,.15);color:var(--fam)}
+.pill-P1{background:rgba(248,113,113,.15);color:var(--p1)}
+.pill-P2{background:rgba(251,146,60,.15);color:var(--p2)}
+.pill-P3{background:rgba(250,204,21,.15);color:var(--p3)}
+.pill-P0{background:rgba(100,116,139,.1);color:var(--muted)}
+.pill-enh{background:rgba(56,189,248,.12);color:var(--enh)}
+.fam-tag{font-size:10px;color:var(--fam);background:rgba(129,140,248,.1);padding:2px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;flex-shrink:0}
+.ctrl-body{display:none;border-top:1px solid var(--border);padding:.8rem 1rem;font-size:12.5px;color:var(--muted);line-height:1.65}
+.ctrl-body.show{display:block}
+.ctrl-meta-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.65rem;padding-top:.65rem;border-top:1px solid var(--border)}
+.ctrl-meta{font-size:11px;color:var(--muted)}
+.ctrl-meta span{color:var(--text)}
+.prio-note{font-size:10px;color:var(--muted);font-style:italic;margin-top:.5rem;opacity:.6}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:1rem;color:var(--muted)}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:1.25rem;color:#fca5a5;font-size:13px;line-height:1.7}
+.error-box a{color:var(--accent)}
+.error-box code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(255,255,255,.05);padding:1px 5px;border-radius:3px}
+.error-box ul{margin:.5rem 0 .5rem 1.2rem}
+.empty{text-align:center;padding:4rem;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-badge">NIST SP 800-53</div>
+  <div>
+    <h1>Control Explorer</h1>
+    <p id="headerSub">Rev 5 · Loading from NIST OSCAL…</p>
+  </div>
+  <div class="header-right">
+    <div class="live-dot" id="liveDot"></div>
+    <span class="live-label" id="liveLabel">Connecting…</span>
+    <span class="ver-badge" id="verBadge">Rev 5</span>
+  </div>
+</header>
+
+<div class="container">
+<aside>
+  <div>
+    <div class="section-label">Search</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="ID or keyword… AC-2, MFA, audit log">
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Control Type</div>
+    <div class="toggle-row">
+      <button class="toggle-btn" data-t="base" onclick="toggleType('base')">Base only</button>
+      <button class="toggle-btn" data-t="enh" onclick="toggleType('enh')">Enhancements</button>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Impact Baseline <span style="font-size:9px">(SP 800-53B)</span></div>
+    <div class="baseline-btns">
+      <button class="baseline-btn" data-level="LOW" onclick="toggleBaseline('LOW')"><span>● Low</span><span class="count-badge" id="cnt-LOW">—</span></button>
+      <button class="baseline-btn" data-level="MOD" onclick="toggleBaseline('MOD')"><span>● Moderate</span><span class="count-badge" id="cnt-MOD">—</span></button>
+      <button class="baseline-btn" data-level="HIGH" onclick="toggleBaseline('HIGH')"><span>● High</span><span class="count-badge" id="cnt-HIGH">—</span></button>
+      <button class="baseline-btn" data-level="PRIV" onclick="toggleBaseline('PRIV')"><span>◈ Privacy</span><span class="count-badge" id="cnt-PRIV">—</span></button>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Priority <span style="font-size:9px">(Rev 4 ref)</span></div>
+    <div class="toggle-row">
+      <button class="toggle-btn" data-p="P1" onclick="togglePrio('P1')">P1</button>
+      <button class="toggle-btn" data-p="P2" onclick="togglePrio('P2')">P2</button>
+      <button class="toggle-btn" data-p="P3" onclick="togglePrio('P3')">P3</button>
+    </div>
+    <div class="prio-legend">
+      <span style="color:var(--p1)">■ P1</span> implement first &nbsp;
+      <span style="color:var(--p2)">■ P2</span> second &nbsp;
+      <span style="color:var(--p3)">■ P3</span> third
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Family <button class="clear-btn" onclick="clearFamily()">clear</button></div>
+    <div class="family-list" id="familyList"><span style="font-size:11px;color:var(--muted)">Loading…</span></div>
+  </div>
+</aside>
+
+<main>
+  <div id="loadingEl" class="loading">
+    <div class="spinner"></div>
+    <div style="font-size:13px">Fetching complete control catalogue from NIST…</div>
+    <div style="font-size:11px;opacity:.5">Source: usnistgov/oscal-content on GitHub</div>
+  </div>
+  <div id="appContent" style="display:none">
+    <div class="stats-bar">
+      <span>Showing <strong id="resultCount">0</strong> of <strong id="totalCount">0</strong></span>
+      <div class="bi-pill bi-none" id="biPill">All baselines</div>
+    </div>
+    <div class="controls-list" id="controlsList"></div>
+    <div class="empty" id="emptyState" style="display:none">No controls match your filters.</div>
+  </div>
+</main>
+</div>
+
+<script>
+const PRIORITY_MAP={
+  "ac-1":"P1","ac-2":"P1","ac-3":"P1","ac-4":"P1","ac-5":"P1","ac-6":"P1","ac-7":"P2","ac-8":"P1",
+  "ac-10":"P3","ac-11":"P3","ac-12":"P2","ac-14":"P3","ac-17":"P1","ac-18":"P1","ac-19":"P1",
+  "ac-20":"P1","ac-21":"P2","ac-22":"P3",
+  "at-1":"P1","at-2":"P1","at-3":"P1","at-4":"P3",
+  "au-1":"P1","au-2":"P1","au-3":"P1","au-4":"P1","au-5":"P1","au-6":"P1","au-7":"P2","au-8":"P1",
+  "au-9":"P1","au-10":"P2","au-11":"P3","au-12":"P1",
+  "ca-1":"P1","ca-2":"P2","ca-3":"P1","ca-5":"P3","ca-6":"P2","ca-7":"P2","ca-8":"P2","ca-9":"P2",
+  "cm-1":"P1","cm-2":"P1","cm-3":"P1","cm-4":"P2","cm-5":"P1","cm-6":"P1","cm-7":"P1","cm-8":"P1",
+  "cm-9":"P1","cm-10":"P2","cm-11":"P1",
+  "cp-1":"P1","cp-2":"P1","cp-3":"P2","cp-4":"P2","cp-6":"P1","cp-7":"P1","cp-8":"P1","cp-9":"P1","cp-10":"P1",
+  "ia-1":"P1","ia-2":"P1","ia-3":"P1","ia-4":"P1","ia-5":"P1","ia-6":"P2","ia-7":"P1","ia-8":"P1",
+  "ir-1":"P1","ir-2":"P2","ir-3":"P2","ir-4":"P1","ir-5":"P1","ir-6":"P1","ir-7":"P2","ir-8":"P1",
+  "ma-1":"P1","ma-2":"P2","ma-3":"P3","ma-4":"P2","ma-5":"P2","ma-6":"P3",
+  "mp-1":"P1","mp-2":"P1","mp-3":"P2","mp-4":"P1","mp-5":"P1","mp-6":"P1","mp-7":"P1",
+  "pe-1":"P1","pe-2":"P1","pe-3":"P1","pe-4":"P1","pe-5":"P2","pe-6":"P1","pe-8":"P3",
+  "pe-9":"P1","pe-10":"P1","pe-11":"P1","pe-12":"P1","pe-13":"P1","pe-14":"P1","pe-15":"P1",
+  "pe-16":"P2","pe-17":"P2","pe-18":"P3",
+  "pl-1":"P1","pl-2":"P1","pl-4":"P2","pl-8":"P1",
+  "pm-1":"P1","pm-2":"P1","pm-3":"P1","pm-4":"P1","pm-5":"P1","pm-6":"P1","pm-7":"P1","pm-8":"P1",
+  "pm-9":"P1","pm-10":"P1","pm-11":"P1",
+  "ps-1":"P1","ps-2":"P1","ps-3":"P1","ps-4":"P1","ps-5":"P2","ps-6":"P3","ps-7":"P2","ps-8":"P3",
+  "ra-1":"P1","ra-2":"P1","ra-3":"P1","ra-5":"P1","ra-7":"P2",
+  "sa-1":"P1","sa-2":"P1","sa-3":"P1","sa-4":"P1","sa-5":"P2","sa-8":"P1","sa-9":"P1",
+  "sa-10":"P1","sa-11":"P1","sa-15":"P2","sa-16":"P2","sa-17":"P1",
+  "sc-1":"P1","sc-2":"P1","sc-3":"P1","sc-4":"P1","sc-5":"P1","sc-7":"P1","sc-8":"P1","sc-10":"P2",
+  "sc-12":"P1","sc-13":"P1","sc-15":"P1","sc-17":"P1","sc-18":"P2","sc-19":"P1","sc-20":"P1",
+  "sc-21":"P1","sc-22":"P1","sc-23":"P1","sc-24":"P1","sc-28":"P1","sc-39":"P1",
+  "si-1":"P1","si-2":"P1","si-3":"P1","si-4":"P1","si-5":"P1","si-6":"P1","si-7":"P1","si-8":"P2",
+  "si-10":"P1","si-11":"P2","si-12":"P2",
+  "sr-1":"P1","sr-2":"P1","sr-3":"P1","sr-5":"P1","sr-6":"P1","sr-7":"P1","sr-8":"P1","sr-9":"P1",
+  "sr-11":"P1","sr-12":"P2"
+};
+
+const LOW_SET=new Set(["ac-1","ac-2","ac-3","ac-7","ac-8","ac-14","ac-17","ac-18","ac-19","ac-20","ac-22","at-1","at-2","at-3","at-4","au-1","au-2","au-3","au-4","au-5","au-6","au-8","au-9","au-11","au-12","ca-1","ca-2","ca-3","ca-5","ca-6","ca-7","ca-9","cm-1","cm-2","cm-6","cm-7","cm-8","cm-10","cm-11","cp-1","cp-2","cp-3","cp-4","cp-9","cp-10","ia-1","ia-2","ia-4","ia-5","ia-6","ia-7","ia-8","ir-1","ir-2","ir-4","ir-5","ir-6","ir-7","ir-8","ma-1","ma-2","ma-4","ma-5","mp-1","mp-2","mp-6","mp-7","pe-1","pe-2","pe-3","pe-6","pe-8","pe-12","pe-13","pe-14","pe-15","pe-16","pl-1","pl-2","pl-4","ps-1","ps-2","ps-3","ps-4","ps-5","ps-6","ps-7","ps-8","ra-1","ra-2","ra-3","ra-5","ra-7","sa-1","sa-2","sa-3","sa-4","sa-5","sa-9","sa-22","sc-1","sc-5","sc-7","sc-12","sc-13","sc-15","sc-20","sc-21","sc-22","sc-39","si-1","si-2","si-3","si-4","si-5","si-12","sr-1","sr-2","sr-3","sr-5","sr-6","sr-7","sr-8","sr-10","sr-11","sr-12","ac-2.1","ac-2.2","ac-2.3","ac-2.4","ia-2.1","ia-2.2","ia-2.12","sc-7.3","sc-7.4","sc-7.5","sc-7.7","si-3.1","si-3.2","si-4.2","si-4.4","cp-9.1","au-9.3","au-6.1","cm-7.1","cm-7.2"]);
+
+const MOD_EXTRA=new Set(["ac-4","ac-5","ac-6","ac-11","ac-12","ac-21","au-7","au-10","ca-8","cm-3","cm-4","cm-5","cm-9","cm-12","cp-6","cp-7","cp-8","ia-3","ia-11","ia-12","ir-3","ma-3","ma-6","mp-3","mp-4","mp-5","pe-4","pe-5","pe-9","pe-10","pe-11","pe-17","pl-8","pt-1","pt-2","pt-3","pt-5","pt-6","ra-8","sa-8","sa-10","sa-11","sa-15","sc-2","sc-4","sc-8","sc-10","sc-17","sc-18","sc-19","sc-23","sc-28","si-6","si-7","si-8","si-10","si-11","si-16","si-18","sr-9","ac-2.5","ac-2.9","ac-2.10","ac-2.11","ac-2.12","ac-2.13","ac-6.1","ac-6.2","ac-6.5","ac-6.9","ac-6.10","ac-17.2","ac-17.3","ac-18.1","ac-19.5","at-2.2","at-3.2","at-3.3","au-2.3","au-3.1","au-6.3","au-6.6","au-9.2","au-12.1","au-12.3","ca-2.1","ca-2.2","ca-7.1","ca-7.3","cm-2.2","cm-2.3","cm-3.1","cm-3.2","cm-3.4","cm-6.1","cm-7.5","cm-8.1","cm-8.2","cm-8.3","cm-8.4","cp-2.1","cp-2.2","cp-2.3","cp-2.8","cp-4.1","cp-4.2","cp-6.1","cp-6.3","cp-7.1","cp-7.2","cp-7.3","cp-9.2","cp-9.3","cp-9.5","cp-10.2","ia-2.6","ia-2.8","ia-5.1","ia-5.2","ia-5.3","ia-5.6","ia-8.1","ia-8.2","ia-8.4","ir-2.1","ir-2.2","ir-3.2","ir-4.1","ir-4.11","ir-6.1","ir-8.1","ma-3.1","ma-3.2","ma-4.3","ma-4.6","mp-6.1","mp-6.2","pe-2.3","pe-3.1","pe-6.1","pe-6.4","ra-5.1","ra-5.2","ra-5.4","ra-5.5","sa-4.1","sa-4.2","sa-4.8","sa-4.9","sa-4.10","sa-9.1","sa-9.2","sa-10.1","sa-11.1","sa-11.2","sa-11.8","sc-5.1","sc-5.2","sc-7.8","sc-7.10","sc-7.11","sc-7.12","sc-7.13","sc-7.14","sc-7.18","sc-7.21","sc-7.25","sc-8.1","sc-23.3","sc-28.1","si-2.2","si-4.1","si-4.5","si-4.10","si-4.12","si-4.13","si-4.14","si-4.20","si-4.22","si-4.23","si-5.1","si-7.1","si-7.2","si-7.5","si-7.6","si-7.7"]);
+
+const HIGH_EXTRA=new Set(["ac-10","ac-17.1","ac-2.6","ac-2.7","ac-6.3","ac-6.7","ac-6.8","au-6.4","au-6.5","au-9.4","au-9.5","au-12.2","ca-2.3","ca-7.2","ca-8.1","ca-8.2","cm-14","cp-2.4","cp-2.5","cp-6.2","cp-7.4","cp-9.6","cp-10.4","cp-11","ia-2.4","ia-3.1","ia-5.4","ia-5.7","ia-5.8","ia-5.9","ia-5.11","ia-5.12","ir-4.2","ir-4.3","ir-4.9","ir-8.2","ma-3.3","ma-4.2","ma-5.1","ma-5.2","ma-5.3","mp-6.3","pe-3.2","pe-6.2","pe-6.3","pe-15.1","pe-17.1","pe-18","ra-9","sa-4.5","sa-4.6","sa-4.7","sa-9.3","sa-9.4","sa-9.5","sa-11.3","sa-11.4","sa-11.6","sa-11.7","sa-16","sa-17","sc-3","sc-7.15","sc-7.17","sc-7.19","sc-7.20","sc-7.22","sc-7.23","sc-8.2","sc-8.3","sc-24","si-2.3","si-3.7","si-3.8","si-4.3","si-4.6","si-4.7","si-4.8","si-4.9","si-4.15","si-4.16","si-4.17","si-4.18","si-4.19","si-4.24","si-4.25","si-6.1","si-6.2","si-7.3","si-7.4","si-7.8","si-7.10","si-7.12","si-7.13","si-7.14","si-7.15","si-7.16","si-7.17","sr-9"]);
+
+const PRIV_SET=new Set(["ac-1","ac-2","ac-3","ac-16","ac-20","ac-21","at-1","at-2","at-3","au-1","au-2","au-3","ca-1","ca-2","ca-3","ca-7","cm-1","cm-9","cm-12","cm-13","ia-1","ia-4","ia-8","ir-1","ir-2","ir-4","ir-5","ir-6","ir-8","ir-9","ma-1","mp-1","mp-6","pe-1","pl-1","pl-4","pl-8","pm-9","pm-10","pm-20","pm-21","pm-22","pm-23","pm-24","pm-25","pm-26","pm-27","ps-1","ps-3","ps-6","pt-1","pt-2","pt-3","pt-4","pt-5","pt-6","pt-7","pt-8","ra-1","ra-2","ra-3","ra-7","ra-8","sa-1","sa-3","sa-4","sa-8","sa-9","sa-17","sc-1","sc-7","sc-8","sc-12","sc-13","sc-28","si-1","si-2","si-12","si-18","si-19"]);
+
+function inBaseline(normId,lvl){
+  if(lvl==='LOW') return LOW_SET.has(normId);
+  if(lvl==='MOD') return LOW_SET.has(normId)||MOD_EXTRA.has(normId);
+  if(lvl==='HIGH') return LOW_SET.has(normId)||MOD_EXTRA.has(normId)||HIGH_EXTRA.has(normId);
+  if(lvl==='PRIV') return PRIV_SET.has(normId);
+  return false;
+}
+
+function normId(rawId){
+  // oscal uses ac-2.1 for enhancements; normalise to ac-2.1 for lookup
+  return rawId.toLowerCase();
+}
+
+function extractDesc(ctrl){
+  const parts=ctrl.parts||[];
+  for(const p of parts){
+    if(p.name==='statement') return flatProse(p);
+  }
+  return '';
+}
+function flatProse(p){
+  let t=p.prose||'';
+  for(const s of(p.parts||[])) t+=' '+flatProse(s);
+  return t.replace(/\s+/g,' ').trim();
+}
+
+let ALL=[], FAMILIES=[];
+let aBL=null,aFam=null,aPrio=null,aType=null,expId=null;
+
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  return ALL.filter(c=>{
+    const mQ=!q||c.id.includes(q)||c.rawId.includes(q)||c.title.toLowerCase().includes(q)||c.desc.toLowerCase().includes(q)||c.fam.toLowerCase()===q||c.famName.toLowerCase().includes(q);
+    const mF=!aFam||c.fam===aFam;
+    const mB=!aBL||inBaseline(c.rawId,aBL);
+    const mP=!aPrio||c.prio===aPrio;
+    const mT=!aType||(aType==='base'&&!c.isEnh)||(aType==='enh'&&c.isEnh);
+    return mQ&&mF&&mB&&mP&&mT;
+  });
+}
+
+function updateCounts(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const sub=ALL.filter(c=>{
+    const mQ=!q||c.id.includes(q)||c.title.toLowerCase().includes(q)||c.desc.toLowerCase().includes(q)||c.fam.toLowerCase()===q||c.famName.toLowerCase().includes(q);
+    const mF=!aFam||c.fam===aFam;
+    const mP=!aPrio||c.prio===aPrio;
+    const mT=!aType||(aType==='base'&&!c.isEnh)||(aType==='enh'&&c.isEnh);
+    return mQ&&mF&&mP&&mT;
+  });
+  ['LOW','MOD','HIGH','PRIV'].forEach(l=>document.getElementById('cnt-'+l).textContent=sub.filter(c=>inBaseline(c.rawId,l)).length.toLocaleString());
+}
+
+function render(){
+  const f=getFiltered();
+  document.getElementById('resultCount').textContent=f.length.toLocaleString();
+  updateCounts();
+  const biMap={LOW:['bi-low','● Low'],MOD:['bi-mod','● Moderate'],HIGH:['bi-high','● High'],PRIV:['bi-priv','◈ Privacy']};
+  const bi=document.getElementById('biPill');
+  if(aBL&&biMap[aBL]){bi.className='bi-pill '+biMap[aBL][0];bi.textContent=biMap[aBL][1]+' Baseline';}
+  else{bi.className='bi-pill bi-none';bi.textContent='All baselines';}
+  const list=document.getElementById('controlsList');
+  const empty=document.getElementById('emptyState');
+  if(!f.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=f.map(c=>{
+    const bPills=[inBaseline(c.rawId,'LOW')?'<span class="pill pill-L">L</span>':'',inBaseline(c.rawId,'MOD')?'<span class="pill pill-M">M</span>':'',inBaseline(c.rawId,'HIGH')?'<span class="pill pill-H">H</span>':'',inBaseline(c.rawId,'PRIV')?'<span class="pill pill-PT">PT</span>':''].join('');
+    const pp=c.prio?`<span class="pill pill-${c.prio}">${c.prio}</span>`:'<span class="pill pill-P0">—</span>';
+    const ep=c.isEnh?'<span class="pill pill-enh">ENH</span>':'';
+    const exp=expId===c.id;
+    const bText=[inBaseline(c.rawId,'LOW')?'Low':'',inBaseline(c.rawId,'MOD')?'Moderate':'',inBaseline(c.rawId,'HIGH')?'High':'',inBaseline(c.rawId,'PRIV')?'Privacy':''].filter(Boolean).join(', ')||'Not in SP 800-53B baseline';
+    const pText=c.prio?`${c.prio} — ${c.prio==='P1'?'implement first':c.prio==='P2'?'implement second':'implement third'} (Rev 4 reference)`:'Not assigned (Rev 5 new or PM control)';
+    return `<div class="ctrl-card${exp?' expanded':''}${c.isEnh?' is-enh':''}">
+      <div class="card-header" onclick="toggleCard(${JSON.stringify(c.id)})">
+        <span class="ctrl-id${c.isEnh?' enh':''}">${c.id.toUpperCase()}</span>
+        <span class="ctrl-name">${c.title}</span>
+        <div class="pills">${bPills}${pp}${ep}<span class="fam-tag">${c.fam}</span></div>
+      </div>
+      <div class="ctrl-body${exp?' show':''}">
+        ${c.desc||'<em style="opacity:.5">No statement text in OSCAL source.</em>'}
+        <div class="ctrl-meta-row">
+          <span class="ctrl-meta">Family: <span>${c.famName}</span></span>
+          <span class="ctrl-meta">Baselines: <span>${bText}</span></span>
+          <span class="ctrl-meta">Priority: <span>${pText}</span></span>
+          ${c.isEnh&&c.parentId?`<span class="ctrl-meta">Enhancement of: <span>${c.parentId.toUpperCase()}</span></span>`:''}
+        </div>
+        <p class="prio-note">Priority (P1/P2/P3) carried from Rev 4 for reference. SP 800-53 Rev 5 removed formal priority codes; use the SP 800-53B baselines as the primary implementation sequencing guide.</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(id){expId=expId===id?null:id;render();}
+function toggleBaseline(l){aBL=aBL===l?null:l;document.querySelectorAll('.baseline-btn').forEach(b=>{const cls={LOW:'active-low',MOD:'active-mod',HIGH:'active-high',PRIV:'active-priv'}[b.dataset.level]||'';b.className='baseline-btn'+(aBL===b.dataset.level?' '+cls:'');});render();}
+function togglePrio(p){aPrio=aPrio===p?null:p;document.querySelectorAll('[data-p]').forEach(b=>{b.className='toggle-btn'+(aPrio===b.dataset.p?' active-'+b.dataset.p.toLowerCase():'');});render();}
+function toggleType(t){aType=aType===t?null:t;document.querySelectorAll('[data-t]').forEach(b=>{b.className='toggle-btn'+(aType===b.dataset.t?' active-'+b.dataset.t:'');});render();}
+function toggleFamily(code){aFam=aFam===code?null:code;document.querySelectorAll('.family-item').forEach(el=>el.classList.remove('active'));if(aFam)document.getElementById('fam-'+aFam)?.classList.add('active');render();}
+function clearFamily(){aFam=null;document.querySelectorAll('.family-item').forEach(el=>el.classList.remove('active'));render();}
+document.getElementById('searchInput').addEventListener('input',()=>{expId=null;render();});
+
+(async()=>{
+  const OSCAL_URL='https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json';
+  try{
+    const res=await fetch(OSCAL_URL,{mode:'cors'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const catalog=data.catalog||data;
+    const groups=catalog.groups||[];
+    const controls=[],families=[];
+    for(const g of groups){
+      const fam=g.id.toUpperCase();
+      const famName=g.title;
+      families.push({code:fam,name:famName});
+      for(const c of(g.controls||[])){
+        const rId=normId(c.id);
+        controls.push({id:c.id,rawId:rId,title:c.title||'',desc:extractDesc(c),fam,famName,isEnh:false,parentId:null,prio:PRIORITY_MAP[rId]||null});
+        for(const e of(c.controls||[])){
+          const erId=normId(e.id);
+          controls.push({id:e.id,rawId:erId,title:e.title||'',desc:extractDesc(e),fam,famName,isEnh:true,parentId:c.id,prio:PRIORITY_MAP[erId]||null});
+        }
+      }
+    }
+    ALL=controls; FAMILIES=families;
+    const base=controls.filter(c=>!c.isEnh).length;
+    const enh=controls.filter(c=>c.isEnh).length;
+    document.getElementById('headerSub').textContent=`Rev 5 · ${base.toLocaleString()} base controls · ${enh.toLocaleString()} enhancements · ${(base+enh).toLocaleString()} total`;
+    document.getElementById('totalCount').textContent=(base+enh).toLocaleString();
+    document.getElementById('liveDot').className='live-dot on';
+    document.getElementById('liveLabel').textContent='Live — NIST OSCAL';
+    document.getElementById('verBadge').textContent=catalog.metadata?.['oscal-version']?'OSCAL '+catalog.metadata['oscal-version']:'Rev 5.2';
+    document.getElementById('familyList').innerHTML=FAMILIES.map(f=>`<div class="family-item" id="fam-${f.code}" onclick="toggleFamily('${f.code}')"><span class="fam-code">${f.code}</span><span>${f.name}</span></div>`).join('');
+    document.getElementById('loadingEl').style.display='none';
+    document.getElementById('appContent').style.display='block';
+    render();
+  }catch(err){
+    console.error(err);
+    document.getElementById('liveDot').className='live-dot err';
+    document.getElementById('liveLabel').textContent='Load failed';
+    document.getElementById('loadingEl').style.display='none';
+    document.getElementById('appContent').style.display='block';
+    document.getElementById('controlsList').innerHTML=`<div class="error-box"><strong>Could not load NIST control data.</strong><br><br>This tool fetches controls live from NIST's official OSCAL source on GitHub:<br><code>${OSCAL_URL}</code><br><br>Likely reasons:<ul><li>Opening as a local <code>file://</code> — browsers block cross-origin fetches from file URLs. Host the file via any local server (e.g. <code>npx serve .</code>) or push to GitHub Pages.</li><li>Network unavailable</li></ul>Download the catalogue directly from NIST:<br><a href="https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads" target="_blank">csrc.nist.gov — SP 800-53 Downloads ↗</a></div>`;
+  }
+})();
+</script>
+</body>
+</html>
